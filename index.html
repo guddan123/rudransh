@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space of Rudransh</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
+
+        :root {
+            --primary: #00d2ff;
+            --accent: #ff0055;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --glow: 0 0 15px rgba(0, 210, 255, 0.5);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background: black;
+            height: 100vh;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Space Background */
+        .space-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            z-index: -2;
+        }
+        #stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        #confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+        /* --- LOADER (Slow) --- */
+        #loader-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 3000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .progress-box { width: 300px; height: 5px; background: #333; border-radius: 10px; overflow: hidden; margin-top: 15px; }
+        .progress-bar { height: 100%; width: 0%; background: var(--primary); box-shadow: var(--glow); transition: width 4s ease-in-out; }
+
+        /* --- INTRO SCREENS --- */
+        .container { width: 90%; max-width: 500px; position: relative; z-index: 10; display: none; }
+        .screen { display: none; flex-direction: column; align-items: center; text-align: center; width: 100%; }
+        
+        /* Smooth Intro Animations */
+        .screen.active { display: flex; animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .screen.exit { animation: fadeOut 0.5s forwards; }
+
+        h1 {
+            font-size: 2.5rem; margin-bottom: 20px; white-space: nowrap;
+            background: linear-gradient(to right, #fff, var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
+        }
+        h2 { font-size: 1.4rem; color: #e0e0e0; margin-bottom: 25px; }
+
+        input {
+            padding: 15px; width: 100%; border-radius: 50px;
+            border: 1px solid var(--border); background: rgba(255,255,255,0.1);
+            color: white; font-size: 1.1rem; text-align: center; margin-bottom: 20px; outline: none;
+            transition: 0.3s; backdrop-filter: blur(5px);
+        }
+        input:focus { border-color: var(--primary); box-shadow: var(--glow); }
+
+        button {
+            padding: 15px 30px; border-radius: 50px; border: none; cursor: pointer;
+            font-size: 1rem; font-weight: 600; background: linear-gradient(135deg, var(--primary), #3a7bd5);
+            color: white; transition: 0.3s; width: 100%; margin-bottom: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        button:hover { transform: translateY(-3px); box-shadow: var(--glow); }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+
+        /* --- DASHBOARD --- */
+        #dashboard {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            z-index: 100; flex-direction: column; overflow-y: auto; padding: 20px;
+            animation: fadeIn 1.5s ease;
+        }
+        
+        .dash-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px; background: var(--glass); border-radius: 20px;
+            border: 1px solid var(--border); margin-bottom: 30px;
+        }
+        .brand { font-weight: 800; color: var(--primary); letter-spacing: 1px; }
+
+        /* Top Action Buttons */
+        .top-actions { display: flex; gap: 15px; margin-bottom: 30px; }
+        .action-btn { 
+            flex: 1; padding: 25px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s;
+            border: 1px solid var(--border);
+        }
+        .action-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
+        .action-btn h3 { margin: 0; font-size: 1.2rem; }
+        
+        .crush-bg { background: linear-gradient(45deg, #ff0055, #ff5e62); box-shadow: 0 0 15px rgba(255, 0, 85, 0.4); }
+        .jadoo-bg { background: linear-gradient(45deg, #8e2de2, #4a00e0); box-shadow: 0 0 15px rgba(142, 45, 226, 0.4); }
+
+        /* Links */
+        .link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card {
+            background: var(--glass); border: 1px solid var(--border); padding: 25px;
+            border-radius: 20px; text-align: center; transition: 0.3s;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(255,255,255,0.1); }
+        .card-link {
+            display: inline-block; padding: 10px 25px; margin-top: 15px;
+            border: 2px solid var(--primary); color: var(--primary); text-decoration: none;
+            border-radius: 30px; font-weight: bold; transition: 0.3s;
+        }
+        .card-link:hover { background: var(--primary); color: black; box-shadow: var(--glow); }
+
+        /* Bottom Section (Games & Memes) */
+        .bottom-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 50px;
+        }
+        .zone-box {
+            background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 25px;
+            border-radius: 20px; text-align: center;
+        }
+        .btn-group-wrap { display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .zone-btn { width: auto; background: #333; font-size: 0.9rem; padding: 12px 20px; border-radius: 30px; border:none; color:white; cursor:pointer; transition:0.2s; }
+        .zone-btn:hover { background: var(--primary); transform: scale(1.05); }
+
+        /* Specific Meme Button Style */
+        .meme-btn { background: linear-gradient(45deg, #4b6cb7, #182848); }
+        .meme-btn:hover { background: linear-gradient(45deg, #182848, #4b6cb7); }
+
+        /* --- ACTIVITY OVERLAY (Full Screen) --- */
+        #overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .close-overlay {
+            position: absolute; top: 20px; right: 20px; width: 40px; height: 40px;
+            background: none; border: 1px solid #666; color: #fff; border-radius: 50%;
+            font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+        .close-overlay:hover { border-color: red; color: red; }
+        
+        .overlay-content { width: 90%; max-width: 450px; text-align: center; }
+        
+        /* Overlay Animations */
+        .content-enter { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .content-exit { animation: fadeOut 0.4s forwards; }
+
+        .denied-text { color: var(--accent); font-size: 2rem; font-weight: bold; text-shadow: 0 0 20px red; margin-bottom: 20px; }
+        .loading-text { color: var(--primary); font-size: 1.5rem; animation: pulse 1s infinite; }
+        .success-text { color: #0f0; font-size: 2rem; font-weight: bold; text-shadow: 0 0 20px lime; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.95); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Game Specifics */
+        .ttt-grid { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; margin: 20px auto; }
+        .ttt-cell { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 10px; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .rps-icons { font-size: 3rem; display: flex; justify-content: space-around; margin: 20px 0; }
+        .rps-icon { cursor: pointer; transition: 0.3s; padding: 10px; border-radius: 50%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="space-bg"></div>
+    <canvas id="stars"></canvas>
+    <canvas id="confetti"></canvas>
+
+    <!-- LOADER -->
+    <div id="loader-screen">
+        <h2 style="letter-spacing: 2px;">LOADING SPACE...</h2>
+        <div class="progress-box"><div class="progress-bar" id="p-bar"></div></div>
+    </div>
+
+    <!-- INTRO -->
+    <div class="container" id="intro-container">
+        <div id="s1" class="screen active"><h1>Welcome to the Space Of...</h1></div>
+        <div id="s2" class="screen"><h1 style="color:var(--primary); font-size:3rem;">Rudransh Singh</h1></div>
+        <div id="s3" class="screen">
+            <h2>Enter Your Name</h2>
+            <input type="text" id="inpName" placeholder="Type here..." autocomplete="off">
+            <button onclick="saveName()">Next ➜</button>
+        </div>
+        <div id="s4" class="screen">
+            <h2>Who are you?</h2>
+            <button onclick="next('s4','s5')">I'm Friend of Rudransh</button>
+            <button onclick="next('s4','s5')">I'm Close Friend of Rudransh</button>
+            <button onclick="next('s4','s5')">I Just know About Rudransh</button>
+        </div>
+        <div id="s5" class="screen">
+            <h2>Are you a...</h2>
+            <div class="btn-grid">
+                <button onclick="saveGender('Girl')">Girl 👩</button>
+                <button onclick="saveGender('Boy')">Boy 👨</button>
+            </div>
+        </div>
+        <div id="s6" class="screen">
+            <h2>Current Status</h2>
+            <button onclick="handleStatus('School')">School Student 🎒</button>
+            <button onclick="handleStatus('College')">College Student 🎓</button>
+            <button onclick="handleStatus('Adult')">Adult / Working 💼</button>
+        </div>
+        <div id="s7" class="screen">
+            <h2>Which Class?</h2>
+            <div class="btn-grid">
+                <button onclick="finishIntro()">6th - 8th</button>
+                <button onclick="finishIntro()">9th - 10th</button>
+                <button onclick="finishIntro()">11th - 12th</button>
+                <button onclick="finishIntro()">Other</button>
+            </div>
+        </div>
+        <div id="s8" class="screen">
+            <h1>🎉 Welcome 🎉</h1>
+            <h1 id="finalName" style="color:var(--primary); font-size:3rem; text-transform:capitalize;">User</h1>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+        <div class="dash-header">
+            <div class="brand">🚀 RUDRANSH SPACE</div>
+            <div id="dashUser">User</div>
+        </div>
+
+        <div class="top-actions">
+            <div class="action-btn crush-bg" onclick="openOverlay('crush')">
+                <h3>❤️ Know About My Crush</h3>
+            </div>
+            <div class="action-btn jadoo-bg" onclick="openOverlay('jadoo')">
+                <h3>✨ Jadoo</h3>
+            </div>
+        </div>
+
+        <div class="link-grid">
+            <div class="card">
+                <h3>Download Anything</h3>
+                <p>Movies, Books, Files & More</p>
+                <a href="https://ewasion.github.io/opendirectory-finder/" target="_blank" class="card-link">Open Finder</a>
+            </div>
+            <div class="card">
+                <h3>Premium Software</h3>
+                <p>Get paid PC software for free</p>
+                <a href="https://filecr.com/us-en/" target="_blank" class="card-link">Visit FileCR</a>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <!-- Games -->
+            <div class="zone-box">
+                <h2>🎮 Arcade Zone</h2>
+                <div class="btn-group-wrap">
+                    <button class="zone-btn" onclick="openOverlay('ttt')">Tic Tac Toe</button>
+                    <button class="zone-btn" onclick="openOverlay('rps')">Rock Paper Scissors</button>
+                </div>
+            </div>
+
+            <!-- Memes -->
+            <div class="zone-box">
+                <h2>😂 Memes Suno</h2>
+                <div class="btn-group-wrap">
+                    <button class="zone-btn meme-btn" onclick="playMeme('elvish.mp3', this)">Elvish Bhai</button>
+                    <button class="zone-btn meme-btn" onclick="playMeme('last.mp3', this)">Chheen Tapak</button>
+                    <button class="zone-btn meme-btn" onclick="playMeme('kyun.mp3', this)">Kyun Nhi Horahi</button>
+                    <button class="zone-btn meme-btn" onclick="playMeme('laugh.mp3', this)">Hasiiiii</button>
+                    <button class="zone-btn meme-btn" onclick="playMeme('baigan.mp3', this)">Baigan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY -->
+    <div id="overlay">
+        <button class="close-overlay" onclick="closeOverlay()">×</button>
+        <div id="overlay-content" class="overlay-content">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <script>
+        // --- SETUP ---
+        const starsCanvas = document.getElementById('stars');
+        const sCtx = starsCanvas.getContext('2d');
+        starsCanvas.width = window.innerWidth; starsCanvas.height = window.innerHeight;
+        let stars = Array(100).fill().map(()=>({x:Math.random()*starsCanvas.width, y:Math.random()*starsCanvas.height, s:Math.random()*2}));
+        function animStars(){
+            sCtx.clearRect(0,0,starsCanvas.width,starsCanvas.height);
+            sCtx.fillStyle='rgba(255,255,255,0.8)';
+            stars.forEach(st=>{st.y+=st.s*0.5; if(st.y>starsCanvas.height)st.y=0; sCtx.beginPath(); sCtx.arc(st.x,st.y,st.s,0,Math.PI*2); sCtx.fill();});
+            requestAnimationFrame(animStars);
+        }
+        animStars();
+
+        // --- GLOBAL VARIABLES ---
+        let userName = "User";
+        let userGender = "Boy"; // Default
+
+        // --- AUDIO HELPERS ---
+        let currentMemeAudio = null;
+
+        function playSound(file) {
+            try { new Audio(file).play(); } catch(e) { console.log(e); }
+        }
+
+        function playMeme(file, btn) {
+            // Stop previous
+            if(currentMemeAudio) {
+                currentMemeAudio.pause();
+                currentMemeAudio.currentTime = 0;
+            }
+            // Reset text of all meme buttons (simplified selector)
+            document.querySelectorAll('.meme-btn').forEach(b => {
+                if(b.innerText.includes('Playing')) {
+                    // This is a quick fix to reset logic, ideally store original text.
+                    // But for now, we just reload logic or keeping it simple:
+                    // Only the clicked button shows playing.
+                    // We need to restore original text.
+                    b.innerText = b.getAttribute('data-original') || b.innerText.replace(' 🔊','').replace('Playing... ','');
+                }
+            });
+
+            // Save original text
+            if(!btn.getAttribute('data-original')) {
+                btn.setAttribute('data-original', btn.innerText);
+            }
+
+            btn.innerText = "Playing... 🔊";
+            currentMemeAudio = new Audio(file);
+            currentMemeAudio.play();
+
+            currentMemeAudio.onended = () => {
+                btn.innerText = btn.getAttribute('data-original');
+                currentMemeAudio = null;
+            };
+        }
+
+        // --- LOADING ---
+        window.onload = () => {
+            // Start Loading Bar (Slow)
+            let pBar = document.getElementById('p-bar');
+            pBar.style.width = '100%'; 
+            
+            // Wait 4.5s (allow transition to finish roughly)
+            setTimeout(() => {
+                document.getElementById('loader-screen').style.display = 'none';
+                document.getElementById('intro-container').style.display = 'block';
+                setTimeout(()=>next('s1','s2'), 1500);
+                setTimeout(()=>next('s2','s3'), 4500);
+            }, 4500);
+        };
+
+        // --- INTRO LOGIC ---
+        function next(curr, nextID) {
+            let c = document.getElementById(curr);
+            let n = document.getElementById(nextID);
+            c.classList.remove('active'); c.classList.add('exit');
+            setTimeout(() => {
+                c.style.display = 'none'; c.classList.remove('exit');
+                n.style.display = 'flex'; n.classList.add('active');
+            }, 500);
+        }
+
+        function saveName() {
+            let v = document.getElementById('inpName').value.trim();
+            if(!v) return alert("Naam to batao!");
+            userName = v.toLowerCase().replace(/(^\w{1})|(\s+\w{1})/g, l=>l.toUpperCase());
+            document.getElementById('finalName').innerText = userName;
+            document.getElementById('dashUser').innerText = userName;
+            next('s3','s4');
+        }
+
+        function saveGender(g) {
+            userGender = g;
+            next('s5','s6');
+        }
+
+        function handleStatus(s) {
+            if(s === 'School') next('s6','s7');
+            else finishIntro();
+        }
+
+        function finishIntro() {
+            let active = document.querySelector('.container .active');
+            active.classList.remove('active'); active.classList.add('exit');
+            setTimeout(() => {
+                active.style.display = 'none';
+                let end = document.getElementById('s8');
+                end.style.display = 'flex'; end.classList.add('active');
+                fireConfetti();
+                setTimeout(() => {
+                    document.getElementById('intro-container').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'flex';
+                }, 4000);
+            }, 500);
+        }
+
+        // --- OVERLAY LOGIC ---
+        const overlay = document.getElementById('overlay');
+        const content = document.getElementById('overlay-content');
+
+        function openOverlay(type) {
+            overlay.style.display = 'flex';
+            overlay.style.animation = 'fadeIn 0.3s';
+            if(type === 'crush') startCrushFlow();
+            if(type === 'jadoo') startJadoo();
+            if(type === 'ttt') startTTT();
+            if(type === 'rps') startRPS();
+        }
+
+        function closeOverlay() {
+            overlay.style.display = 'none';
+            content.innerHTML = '';
+        }
+
+        function updateContent(html) {
+            content.classList.add('content-exit');
+            setTimeout(() => {
+                content.innerHTML = html;
+                content.classList.remove('content-exit');
+                content.classList.add('content-enter');
+                setTimeout(()=>content.classList.remove('content-enter'), 600);
+            }, 400);
+        }
+
+        /* ====== CRUSH LOGIC ====== */
+        function startCrushFlow() {
+            let nums = Array.from({length:4}, ()=>Math.floor(Math.random()*100)+1);
+            let h = `<h2>Choose a Number</h2><div class="btn-grid">`;
+            nums.forEach(n=>h+=`<button onclick="crushStep2()">${n}</button>`);
+            h+=`</div>`;
+            content.innerHTML = h;
+        }
+
+        window.crushStep2 = () => {
+            let a = ["Panda","Tiger","Lion","Cat"].sort(()=>0.5-Math.random());
+            let h = `<h2>Choose an Animal</h2><div class="btn-grid">`;
+            a.forEach(i=>h+=`<button onclick="crushStep3()">${i}</button>`);
+            h+=`</div>`;
+            updateContent(h);
+        }
+
+        window.crushStep3 = () => {
+            let f = ["Apple","Mango","Kiwi","Peach"].sort(()=>0.5-Math.random());
+            let h = `<h2>Choose a Fruit</h2><div class="btn-grid">`;
+            f.forEach(i=>h+=`<button onclick="fakeLoad()">${i}</button>`);
+            h+=`</div>`;
+            updateContent(h);
+        }
+
+        window.fakeLoad = () => {
+            let msgs = ["Authenticating...", "Consulting Owner...", "Asking Permission...", "Almost Done..."];
+            let i = 0;
+            updateContent(`<h2 class="loading-text">${msgs[0]}</h2>`);
+            let inv = setInterval(() => {
+                i++;
+                if(i < msgs.length) {
+                    content.innerHTML = `<h2 class="loading-text content-enter">${msgs[i]}</h2>`;
+                } else {
+                    clearInterval(inv);
+                    showDenial();
+                }
+            }, 1500);
+        }
+
+        function showDenial() {
+            playSound('sound.mp3');
+            updateContent(`
+                <div class="denied-text">Sorry ${userName},<br>Permission Denied By Rudransh.</div>
+                <button onclick="requestAgain()" style="background:var(--primary); width:80%;">Request Again</button>
+            `);
+        }
+
+        window.requestAgain = () => {
+            updateContent(`<h2 class="loading-text">Asking Again...</h2>`);
+            setTimeout(() => {
+                askQ("Bataa Du?", "q1");
+            }, 2000);
+        }
+
+        function askQ(question, step) {
+            updateContent(`
+                <h2>${question}</h2>
+                <div class="btn-grid">
+                    <button onclick="handleAnswer('yes', '${step}')">Yes</button>
+                    <button onclick="handleAnswer('no', '${step}')">No</button>
+                </div>
+            `);
+        }
+
+        // Custom function for Q2 generation
+        function askQ2_Secret() {
+            let suffix = userGender === 'Girl' ? 'i' : 'a';
+            let correctOpt = `Nahi Bataung${suffix}`;
+            let wrongOpt = `Bataung${suffix}`;
+            
+            updateContent(`
+                <h2>Kisi Ko Batayeg${suffix} to nahi?</h2>
+                <div class="btn-grid">
+                    <button onclick="handleQ2('${correctOpt}')">${correctOpt}</button>
+                    <button onclick="handleQ2('${wrongOpt}')">${wrongOpt}</button>
+                </div>
+            `);
+        }
+
+        window.handleQ2 = (ansText) => {
+            if(ansText.startsWith('Bataung')) {
+                // Wrong answer
+                playSound('sound.mp3');
+                updateContent(`
+                    <div class="denied-text">To Fir Nahi Bataunga 😤<br>(Tumne bola bata doge)</div>
+                    <button onclick="closeOverlay()" style="width:50%">Close</button>
+                `);
+            } else {
+                // Correct
+                askQ("Sach Me...", "q3");
+            }
+        }
+
+        window.handleAnswer = (ans, step) => {
+            if(ans === 'no') {
+                playSound('sound.mp3');
+                updateContent(`
+                    <div class="denied-text">To Fir Nahi Bataunga 😤</div>
+                    <button onclick="closeOverlay()" style="width:50%">Close</button>
+                `);
+                return;
+            }
+
+            // YES PATH
+            if(step === 'q1') {
+                askQ2_Secret(); // Special handling for gender specific options
+            }
+            else if(step === 'q3') askQ("Bhagwaan Kasam...", "q4");
+            else if(step === 'q4') askQ("Rudransh Ki Kasam...", "q5");
+            else if(step === 'q5') showFinalSuccess();
+        }
+
+        function showFinalSuccess() {
+            let msgs = ["Ruko...", "Gam Khao...", "Authenticating...", "Asking...", "Almost There..."];
+            let i = 0;
+            updateContent(`<h2 class="loading-text">${msgs[0]}</h2>`);
+            let inv = setInterval(() => {
+                i++;
+                if(i < msgs.length) {
+                    content.innerHTML = `<h2 class="loading-text content-enter">${msgs[i]}</h2>`;
+                } else {
+                    clearInterval(inv);
+                    // Play FINAL Music
+                    playSound('last.mp3');
+                    updateContent(`
+                        <h2>Wo Keh Raha Hai -</h2>
+                        <h1 class="success-text">"Face to Face Milkar Batayenge" 😂</h1>
+                        <button onclick="closeOverlay()">Close</button>
+                    `);
+                }
+            }, 1500);
+        }
+
+        /* ====== JADOO ====== */
+        function startJadoo() {
+            let steps = ["Ek Sec.....", "Gam Khao.....", "Jadoo Aa Raha Hai....", "Gam Khaye Jao 2 Min...", `Koi Jadu Vadu Nahi Chupchap Padh le Jake ${userName} 😂`];
+            let i = 0;
+            content.innerHTML = `<h2 style="color:#bf55ec">${steps[0]}</h2>`;
+            let inv = setInterval(() => {
+                i++;
+                if(i < steps.length) content.innerHTML = `<h2 style="color:#bf55ec" class="content-enter">${steps[i]}</h2>`;
+                else clearInterval(inv);
+            }, 2000);
+        }
+
+        /* ====== GAMES ====== */
+        window.startTTT = () => {
+            let h = `<h3>Tic Tac Toe</h3><div class="ttt-grid" id="grid"></div><h3 id="stat">X Turn</h3><button onclick="startTTT()" style="width:auto">Reset</button>`;
+            content.innerHTML = h;
+            let b=Array(9).fill(null), t='X', g=document.getElementById('grid');
+            b.forEach((_,i)=>{
+                let d=document.createElement('div'); d.className='ttt-cell';
+                d.onclick=()=>{
+                    if(b[i]||checkWin(b))return; b[i]=t; d.innerText=t; d.style.color=(t=='X'?'var(--primary)':'var(--accent)');
+                    if(checkWin(b)) document.getElementById('stat').innerText=`${t} Wins!`;
+                    else { t=(t=='X'?'O':'X'); document.getElementById('stat').innerText=`${t} Turn`; }
+                };
+                g.appendChild(d);
+            });
+        }
+        function checkWin(b){const w=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]; return w.some(c=>b[c[0]]&&b[c[0]]==b[c[1]]&&b[c[0]]==b[c[2]]);}
+
+        window.startRPS = () => {
+            content.innerHTML = `<h3>Rock Paper Scissors</h3>
+            <div class="rps-icons">
+                <div class="rps-icon" onclick="rps('Rock')">🪨</div>
+                <div class="rps-icon" onclick="rps('Paper')">📄</div>
+                <div class="rps-icon" onclick="rps('Scissors')">✂️</div>
+            </div><h3 id="res">Choose!</h3>`;
+        }
+        window.rps = (u) => {
+            let c=['Rock','Paper','Scissors'][Math.floor(Math.random()*3)];
+            let r=(u==c)?"Tie":((u=='Rock'&&c=='Scissors')||(u=='Paper'&&c=='Rock')||(u=='Scissors'&&c=='Paper'))?"You Win!":"You Lose!";
+            document.getElementById('res').innerHTML = `You: ${u}<br>CPU: ${c}<br><span style="color:${r.includes('Win')?'#0f0':'red'}">${r}</span>`;
+        }
+
+        function fireConfetti(){
+            const c=document.getElementById('confetti'); const x=c.getContext('2d');
+            c.width=window.innerWidth; c.height=window.innerHeight;
+            const cols=['#f00','#0f0','#00f','#ff0','#0ff','#f0f'];
+            let p=Array(150).fill().map(()=>({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,c:cols[Math.floor(Math.random()*6)],l:100}));
+            function u(){x.clearRect(0,0,c.width,c.height); p.forEach((i,idx)=>{i.x+=i.vx;i.y+=i.vy;i.vy+=0.2;i.l--; x.fillStyle=i.c;x.fillRect(i.x,i.y,6,6); if(i.l<0)p.splice(idx,1)}); if(p.length)requestAnimationFrame(u);}
+            u();
+        }
+    </script>
+</body>
+</html>
